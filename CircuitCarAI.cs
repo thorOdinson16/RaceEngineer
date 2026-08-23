@@ -11,6 +11,13 @@ public class CircuitCarAI : MonoBehaviour
     public SplineContainer trackSpline;
 
     // ============================================================
+    // FINISH PARKING MARKER
+    // ============================================================
+
+    [Header("Finish Parking")]
+    public Transform finishParkingMarker;
+
+    // ============================================================
     // CAR SETTINGS
     // ============================================================
 
@@ -84,9 +91,7 @@ public class CircuitCarAI : MonoBehaviour
     // FINISH PARKING
     // ============================================================
 
-    private const float FINISH_SLOT_SPACING = 3.5f;
-
-    private const float FINISH_FORWARD_OFFSET = 4f;
+    private const float FINISH_SLOT_SPACING = 2.5f;
 
     private const float FINISH_STOP_DISTANCE = 0.15f;
 
@@ -946,50 +951,21 @@ public class CircuitCarAI : MonoBehaviour
             return;
 
         // ========================================================
-        // FINISH LINE POSITION
+        // PARKING MARKER
         // ========================================================
 
-        Vector3 finishCenter =
-            ConvertToVector3(
-                trackSpline.EvaluatePosition(
-                    0f
-                )
-            );
-
-        // ========================================================
-        // FINISH LINE TRAVEL DIRECTION
-        // ========================================================
-
-        Vector3 tangent =
-            ConvertToVector3(
-                trackSpline.EvaluateTangent(
-                    0f
-                )
-            );
-
-        tangent.y = 0f;
-
-        if (tangent.sqrMagnitude < 0.001f)
+        if (finishParkingMarker == null)
             return;
 
-        tangent.Normalize();
-
-        // Cars travel opposite spline tangent.
-        Vector3 travelDirection =
-            -tangent;
-
-        travelDirection.y = 0f;
-        travelDirection.Normalize();
+        Vector3 markerPosition =
+            finishParkingMarker.position;
 
         // ========================================================
-        // SIDE DIRECTION
+        // MARKER +X DIRECTION (left/right spacing)
         // ========================================================
 
         Vector3 sideDirection =
-            Vector3.Cross(
-                Vector3.up,
-                travelDirection
-            );
+            finishParkingMarker.right;
 
         sideDirection.y = 0f;
 
@@ -999,37 +975,17 @@ public class CircuitCarAI : MonoBehaviour
         sideDirection.Normalize();
 
         // ========================================================
-        // SIX-CAR CENTERED FINISH GRID
-        //
-        // For 6 cars:
-        //
-        // P6    P5    P4    P3    P2    P1
-        //
-        // The grid is centered around the finish line.
+        // ALL CARS IN A ROW FACING MARKER +Z
         // ========================================================
 
-        int totalCars =
-            finishPositionManager.GetCarCount();
-
-        if (totalCars < 1)
-            totalCars = 1;
-
-        float centerOffset =
-            (totalCars - 1) * 0.5f;
-
         float lateralOffset =
-            (finishPosition - 1 - centerOffset) *
+            (finishPosition - 1) *
             FINISH_SLOT_SPACING;
 
         Vector3 targetPosition =
-            finishCenter +
+            markerPosition +
             sideDirection *
             lateralOffset;
-
-        // Move slightly past the finish line.
-        targetPosition +=
-            travelDirection *
-            FINISH_FORWARD_OFFSET;
 
         // ========================================================
         // TERRAIN HEIGHT
@@ -1061,9 +1017,10 @@ public class CircuitCarAI : MonoBehaviour
             transform.position =
                 targetPosition;
 
+            // Face marker +Z direction
             Quaternion finalRotation =
                 Quaternion.LookRotation(
-                    travelDirection,
+                    finishParkingMarker.forward,
                     Vector3.up
                 );
 
@@ -1097,12 +1054,12 @@ public class CircuitCarAI : MonoBehaviour
             );
 
         // ========================================================
-        // ROTATE TOWARD SLOT
+        // ROTATE TOWARD SLOT (FACING MARKER +Z)
         // ========================================================
 
         Quaternion targetRotation =
             Quaternion.LookRotation(
-                moveDirection,
+                finishParkingMarker.forward,
                 Vector3.up
             );
 
@@ -2095,4 +2052,4 @@ public class CircuitCarAI : MonoBehaviour
             value.z
         );
     }
-}  
+}
