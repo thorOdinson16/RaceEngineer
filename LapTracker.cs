@@ -16,6 +16,7 @@ public class LapTracker : MonoBehaviour
 
     private CircuitCarAI ai;
     private RaceStateManager raceStateManager;
+    private TyreSystem tyreSystem;
 
     private float previousT;
 
@@ -190,6 +191,9 @@ public class LapTracker : MonoBehaviour
         ai =
             GetComponent<CircuitCarAI>();
 
+        tyreSystem =
+            GetComponent<TyreSystem>();
+
         currentLap =
             1;
 
@@ -210,6 +214,19 @@ public class LapTracker : MonoBehaviour
 
         bestLapTime =
             0f;
+
+        // --------------------------------------------------------
+        // TYRE CHECK
+        // --------------------------------------------------------
+
+        if (tyreSystem == null)
+        {
+            Debug.LogWarning(
+                gameObject.name +
+                ": TyreSystem is not attached. " +
+                "Tyres will not age automatically."
+            );
+        }
     }
 
     // ============================================================
@@ -351,6 +368,30 @@ public class LapTracker : MonoBehaviour
             completedLapTime.ToString("F3") +
             "s"
         );
+
+        // ========================================================
+        // AGE TYRES
+        // ========================================================
+
+        /*
+         * The car has now completed one full lap.
+         *
+         * Therefore the tyre age increases by exactly one lap.
+         *
+         * This happens before the final-lap check so that the
+         * tyres correctly record the completed final lap as well.
+         */
+
+        if (tyreSystem != null)
+        {
+            tyreSystem.AgeTyres();
+
+            Debug.Log(
+                gameObject.name +
+                " tyres: " +
+                tyreSystem.GetTyreStatus()
+            );
+        }
 
         // ========================================================
         // FINAL LAP

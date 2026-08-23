@@ -121,6 +121,7 @@ public class CircuitCarPhysics : MonoBehaviour
     // ============================================================
 
     private CircuitCarAI ai;
+    private TyreSystem tyreSystem;
 
     private Vector3 velocity;
 
@@ -143,6 +144,9 @@ public class CircuitCarPhysics : MonoBehaviour
     {
         ai =
             GetComponent<CircuitCarAI>();
+
+        tyreSystem =
+            GetComponent<TyreSystem>();
 
         carCollider =
             GetComponent<Collider>();
@@ -217,6 +221,16 @@ public class CircuitCarPhysics : MonoBehaviour
 
         float targetSpeed =
             ai.DesiredSpeed;
+
+        // ========================================================
+        // TYRE PERFORMANCE
+        // ========================================================
+
+        if (tyreSystem != null)
+        {
+            targetSpeed *=
+                tyreSystem.PerformanceMultiplier;
+        }
 
         // ========================================================
         // COLLISION SPEED PENALTY
@@ -304,6 +318,12 @@ public class CircuitCarPhysics : MonoBehaviour
         {
             rate =
                 ACCELERATION;
+
+            if (tyreSystem != null)
+            {
+                rate *=
+                    tyreSystem.PerformanceMultiplier;
+            }
         }
 
         // ========================================================
