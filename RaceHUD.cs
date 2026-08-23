@@ -59,17 +59,100 @@ public class RaceHUD : MonoBehaviour
     public TMP_Text leaderboardText;
 
     // ============================================================
+    // DISPLAY DAMPENING
+    // ============================================================
+
+    private float displayedLapTime;
+    private float displayedRaceTime;
+    private float displayedGapAhead;
+    private float displayedGapBehind;
+    private float lastTextUpdateTime;
+    private const float textUpdateInterval = 0.2f;  // Update text every 200ms (5x/sec)
+    private const float lerpSpeed = 8f;             // Lerp runs every frame (smooth)
+    private const float gapLerpSpeed = 4f;          // Slower dampen for gaps
+
+    // ============================================================
     // UPDATE
     // ============================================================
 
     void Update()
     {
-        UpdateLap();
-        UpdateTiming();
-        UpdatePosition();
-        UpdateGaps();
-        UpdatePositionsGained();
-        UpdateLeaderboard();
+        DampenTimes();
+        DampenGaps();
+        
+        if (Time.time - lastTextUpdateTime >= textUpdateInterval)
+        {
+            UpdateLap();
+            UpdateTiming();
+            UpdatePosition();
+            UpdateGaps();
+            UpdatePositionsGained();
+            UpdateLeaderboard();
+            lastTextUpdateTime = Time.time;
+        }
+    }
+
+    // ============================================================
+    // DAMPEN TIMES
+    // ============================================================
+
+    private void DampenTimes()
+    {
+        if (playerCar != null)
+        {
+            displayedLapTime = Mathf.Lerp(
+                displayedLapTime,
+                playerCar.CurrentLapTime,
+                lerpSpeed * Time.deltaTime
+            );
+        }
+
+        if (raceStateManager != null)
+        {
+            displayedRaceTime = Mathf.Lerp(
+                displayedRaceTime,
+                raceStateManager.RaceTime,
+                lerpSpeed * Time.deltaTime
+            );
+        }
+    }
+
+    // ============================================================
+    // DAMPEN GAPS
+    // ============================================================
+
+    private void DampenGaps()
+    {
+        if (raceStateManager == null)
+            return;
+
+        float gapAhead = raceStateManager.GetGapToCarAhead();
+        if (gapAhead >= 0f)
+        {
+            displayedGapAhead = Mathf.Lerp(
+                displayedGapAhead,
+                gapAhead,
+                gapLerpSpeed * Time.deltaTime
+            );
+        }
+        else
+        {
+            displayedGapAhead = -1f;
+        }
+
+        float gapBehind = raceStateManager.GetGapToCarBehind();
+        if (gapBehind >= 0f)
+        {
+            displayedGapBehind = Mathf.Lerp(
+                displayedGapBehind,
+                gapBehind,
+                gapLerpSpeed * Time.deltaTime
+            );
+        }
+        else
+        {
+            displayedGapBehind = -1f;
+        }
     }
 
     // ============================================================
@@ -124,7 +207,7 @@ public class RaceHUD : MonoBehaviour
             raceTimeText.text =
                 "TIME  " +
                 FormatTime(
-                    raceStateManager.RaceTime
+                    displayedRaceTime
                 );
         }
 
@@ -137,7 +220,7 @@ public class RaceHUD : MonoBehaviour
             currentLapTimeText.text =
                 "LAP   " +
                 FormatTime(
-                    playerCar.CurrentLapTime
+                    displayedLapTime
                 );
         }
 
@@ -237,10 +320,7 @@ public class RaceHUD : MonoBehaviour
 
         if (gapAheadText != null)
         {
-            float gapAhead =
-                raceStateManager.GetGapToCarAhead();
-
-            if (gapAhead < 0f)
+            if (displayedGapAhead < 0f)
             {
                 gapAheadText.text =
                     "GAP AHEAD   ---";
@@ -249,7 +329,7 @@ public class RaceHUD : MonoBehaviour
             {
                 gapAheadText.text =
                     "GAP AHEAD   +" +
-                    gapAhead.ToString("0.000") +
+                    displayedGapAhead.ToString("0.000") +
                     "s";
             }
         }
@@ -260,10 +340,7 @@ public class RaceHUD : MonoBehaviour
 
         if (gapBehindText != null)
         {
-            float gapBehind =
-                raceStateManager.GetGapToCarBehind();
-
-            if (gapBehind < 0f)
+            if (displayedGapBehind < 0f)
             {
                 gapBehindText.text =
                     "GAP BEHIND  ---";
@@ -272,7 +349,7 @@ public class RaceHUD : MonoBehaviour
             {
                 gapBehindText.text =
                     "GAP BEHIND  +" +
-                    gapBehind.ToString("0.000") +
+                    displayedGapBehind.ToString("0.000") +
                     "s";
             }
         }
